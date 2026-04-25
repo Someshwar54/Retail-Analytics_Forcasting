@@ -1,0 +1,5 @@
+backend/
+Dataset/
+retail_analytics.db
+*.py
+*.pkl
