@@ -1,10 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-import os
 import threading
+from app.core.config import settings
 
-# Configuration for Database (Switched to SQLite for easy local testing)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./retail_analytics.db")
+DATABASE_URL = settings.DATABASE_URL
 
 Base = declarative_base()
 
