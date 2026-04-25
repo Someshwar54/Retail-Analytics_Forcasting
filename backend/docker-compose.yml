@@ -1,0 +1,53 @@
+# ── Docker Compose — Retail Analytics & Forecasting ────────────────────────
+# Usage:
+#   docker-compose up --build        (first run — builds image + starts services)
+#   docker-compose up -d             (detached mode)
+#   docker-compose exec api python scripts/seed_database.py   (seed the DB)
+#   docker-compose down -v           (stop + remove volumes)
+
+version: "3.9"
+
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: retail_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: retail_user
+      POSTGRES_PASSWORD: retail_pass
+      POSTGRES_DB: retail_analytics
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U retail_user -d retail_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Application ──────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: retail_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://retail_user:retail_pass@db:5432/retail_analytics"
+      DEBUG: "false"
+      APP_NAME: "Retail Analytics & Forecasting API"
+      APP_VERSION: "1.0.0"
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the Dataset directory so the seed script can access the CSV
+      - ../Dataset:/app/Dataset:ro
+
+volumes:
+  pgdata:
+    driver: local
